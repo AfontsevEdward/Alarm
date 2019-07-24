@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# alarm system
+
 # main circle
 
 while true;
