@@ -1,4 +1,5 @@
 # alarm system
+# v1.1 
 
 from __future__ import division
 
@@ -254,12 +255,20 @@ import re
 ArmedStateFile="/tmp/ramdisk/ArmedStateFile"
 SensorStateFile="/tmp/ramdisk/SensorState.txt"
 SensorResStateFile="/tmp/ramdisk/Resistance.txt"
+SensResStateFile="/tmp/ramdisk/Resistance.txt"
 
+SensResDataFile="/tmp/ramdisk/SensResData.txt"
 
 SensorState=[0]*11
 SensorStateOld=[0]*11
 SensorResState=[0]*11
 SensorResStateOld=[0]*11
+
+
+SensResDataOld=[0]*11
+SensResDataNew=[0]*11
+SensResStateOld=[0]*11
+SensResStateNew=[0]*11
 
 
 SensorName=['sens0','alarm\ entrance','alarm\ 1\ floor\ room','alarm\ 1\ floor','alarm\ 2\ floor','power','alarm\ boiler','gas\ boiler','smoke\ boiler','smoke\ 1\ floor','smoke\ 2\ flor']
@@ -322,8 +331,8 @@ for i in range(1,2):
       if (ArmedStateOld==0):
           os.mknod(ArmedStateFile)
           ArmedStateOld=1
-          if (os.path.exists(SensorResStateFile)):
-              os.remove(SensorResStateFile)
+          if (os.path.exists(SensResStateFile)):
+              os.remove(SensResStateFile)
           print ("ArmedState change from 0 to 1")
           SendMessageWhatsApp("Alarm\ system\ ON")
           SendMessageSms("Alarm\ system\ ON")
@@ -381,56 +390,67 @@ for i in range(1,2):
 
   if (ArmedState==0):
 
-
-      for i in range (1,11):
-        if (SensorAlwaysControl[i]==1):
-          R=GetPortResistance2(i)
-          print(i,"=",R)
-          if (R>2 and R<10):
-            #norm
-            SensorResState[i]=0
-          else:
-            #alarm
-            if (R==555):
-              SensorResState[i]=555
-            else:
-              SensorResState[i]=1
-
-        else:
-           SensorResState[i]=0          
-
-
-
-
-      if (os.path.exists(SensorResStateFile)):
-          with open(SensorResStateFile,'r') as filehandle:
-              SensorResStateOld=json.load(filehandle)
-
-          for i in range(1,11):
-              if (SensorResState[i]!=SensorResStateOld[i]):
-                  if (SensorResState[i]==0):
-                      S="Norm"
-                  if (SensorResState[i]==1):
-                      S="Alarm"
-                  if (SensorResState[i]==555):
-                      S="Error"
-                  print ("Change state sensor=",i," Name=", SensorName[i]," State=",S)
-                  SendMessageWhatsApp(SensorName[i]+'\ '+S)
-                  SendMessageSms(SensorName[i]+'\ '+S)
-              SensorResStateOld[i]=SensorResState[i]
-
+   for i in range (1,11):
+    if (SensorAlwaysControl[i]==1): 
+      R=GetPortResistance(i)
+      #print(i,"=",R)
+      if (R>2 and R<10):
+      #norm
+        SensResDataNew[i]=0
       else:
-          for i in range(1,11):
-              SensorResStateOld[i]=0
-
-      with open(SensorResStateFile,'w') as filehandle:
-          json.dump(SensorResStateOld, filehandle)
-
-
-
-
+       #alarm
+       if (R==555):
+        SensResDataNew[i]=555
+       else:
+        SensResDataNew[i]=1
+    else:
+        SensorResState[i]=0
 
 
+  if (os.path.exists(SensResDataFile)):
+    with open(SensResDataFile,'r') as filehandle:
+      SensResDataOld=json.load(filehandle)
+      print ("Find SensResDataFile")
+  else:
+      SensResDataOld=SensResDataNew
+
+
+  with open(SensResDataFile,'w') as filehandle:
+    json.dump(SensResDataNew, filehandle)
+
+
+  if (os.path.exists(SensResStateFile)):
+      with open(SensResStateFile,'r') as filehandle:
+          SensResStateOld=json.load(filehandle)
+          print ("Find SensResStateFile")
+  else:
+      SensResStateOld=SensResStateNew
+
+  for i in range (1,11):
+    if (SensResDataOld[i]==SensResDataNew[i]):
+        SensResStateNew[i]=SensResDataNew[i]
+    else:
+        SensResStateNew[i]=SensResStateOld[i]
+        #print ("change ",i)
+
+  for i in range (1,11):
+    if (SensResStateOld[i]!=SensResStateNew[i]):
+        print ("Change state i=",i)
+
+        if (SensResStateNew[i]==0):
+          S="Norm"
+        if (SensResStateNew[i]==1):
+          S="Alarm"
+        if (SensResStateNew[i]==555):
+          S="Error"
+        print ("Change state sensor=",i," Name=", SensorName[i]," State=",S)
+        SendMessageWhatsApp(SensorName[i]+'\ '+S)
+        SendMessageSms(SensorName[i]+'\ '+S)
+
+
+
+  with open(SensResStateFile,'w') as filehandle:
+      json.dump(SensResStateNew, filehandle)
 
 
 
