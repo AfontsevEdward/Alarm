@@ -1,0 +1,6 @@
+109 disarm
+23 24 norm
+118 entrance
+37 smoke
+3 secur
+17 45 214 sensor fail
